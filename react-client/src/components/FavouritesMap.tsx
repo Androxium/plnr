@@ -2,15 +2,8 @@ import L, { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, TileLayer, Popup, useMapEvents } from "react-leaflet";
 import React, { useEffect, useState } from "react";
-import { HotChocolate } from '../domain/domain';
-
-interface Coords {
-    lat: number,
-    lng: number,
-};
-
-// Default coordinates set to Oslo central station
-const zoom : number = 15;
+import { Coords } from '../utils/interfaces';
+import { _INITIAL_MAP_ZOOM } from "../utils/constants";
 
 const icon : L.DivIcon = L.divIcon({
     className: "hot-chocolate-icon",
@@ -38,14 +31,13 @@ export default function FavoritesMap() {
                 const lng: number = e.latlng.lng;
                 const newList: Array<Coords> = markersList.concat({lat, lng});
                 setMarkersList(newList);  
-                console.log(markersList);           
             },            
         });
         return null;
     }
 
     return (
-        <MapContainer center={initialPosition} zoom={zoom} scrollWheelZoom={true} >
+        <MapContainer center={initialPosition} zoom={_INITIAL_MAP_ZOOM} scrollWheelZoom={true} >
             <TileLayer
                 attribution="&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors"
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -60,5 +52,5 @@ export default function FavoritesMap() {
                 />
             )}
         </MapContainer>
-        )
+    )
 };

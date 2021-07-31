@@ -1,9 +1,8 @@
 import L, { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { io, Socket } from "socket.io-client";
 import { MapContainer, Marker, TileLayer, Popup, useMapEvents } from "react-leaflet";
 import React, { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
-import { ClientEvents, ServerEvents } from "../../../server/lib/events";
 import { Coords } from '../utils/interfaces';
 import { _INITIAL_MAP_ZOOM } from "../utils/constants";
 
@@ -20,25 +19,12 @@ const mapLocation = (location: any) => {
     }
 };
 
-export default function FavoritesMap() {
+const socket = io();
+
+const FavoritesMap = () => {
     const [initialPosition, setInitialPosition] = useState<[number, number]>([59.91174337077401, 10.750425582038146]);
     const [markersList, setMarkersList] = useState<Array<Coords>>([]);
-
-    const socket: Socket<ServerEvents, ClientEvents> = io("http://localhost:3000");
-    socket.on("connect", () => {
-        socket.emit("location:list", (res) => {
-            if ("error" in res) {
-            // handle the error
-            return;
-            }
-            setMarkersList(res.data.map(mapLocation));
-        });
-    });
-    socket.on("location:created", (location) => {
-        const newList: Array<Coords> = markersList.concat(mapLocation(location));
-        setMarkersList(newList); 
-    });
-
+    
     // asks the user for their location information to center the map
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(position => {
@@ -52,15 +38,16 @@ export default function FavoritesMap() {
             click(e) {
                 const lat: number = e.latlng.lat;
                 const lng: number = e.latlng.lng;
-                const newList: Array<Coords> = markersList.concat({lat, lng});
-                socket.emit('location:create', {lat, lng}, (res) => {
-                    console.log(res);
-                });
-                setMarkersList(newList);  
+                socket.emit('location:create', {lat, lng})
             },            
         });
         return null;
     }
+
+    socket.on('location:create', location => {
+        const newList: Array<Coords> = markersList.concat({lat: location.lat, lng: location.lng});
+        setMarkersList(newList);
+    })
 
     return (
         <MapContainer center={initialPosition} zoom={_INITIAL_MAP_ZOOM} scrollWheelZoom={true} >
@@ -80,3 +67,5 @@ export default function FavoritesMap() {
         </MapContainer>
     )
 };
+
+export default FavoritesMap;
